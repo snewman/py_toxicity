@@ -50,10 +50,10 @@ def score_of_violation(msg):
                 for rule in CHECKSTYLE_RULES.items():
                                 match = re.match(rule[1], msg)
                                 if match:
-                                                return (rule[0], toxicity_score(match.group(1), match.group(2)))
+                                                return toxicity_score(match.group(1), match.group(2))
                                                
                 logging.warning("Unknown violation type " + msg)
-                return ("Unknown", 0.0)
+                return 0.0
 
 def name_of_violation(msg):
     for rule in CHECKSTYLE_RULES.items():
@@ -82,17 +82,28 @@ def main(argv):
                     if len(errors) > 0:
                         #Need to convert to maps to pull into a table...
                         file = file.getAttribute("name")
-                        file_scores[file] = map(lambda error:  score_of_violation(error.getAttribute('message')), errors)
-                        
+
                         for error in errors:
-                            violations.add(name_of_violation(error.getAttribute('message')))
+                            message = error.getAttribute('message')
+                            score = score_of_violation(message)
+                            violation = name_of_violation(message)
+                            violations.add(violation)
+
+                            if not file_scores.has_key(file):
+                                file_scores[file] = {}
+
+                            if file_scores[file].has_key(violation):
+                                file_scores[file][violation] = file_scores[file][violation] + score
+                            else:
+                                file_scores[file][violation] = score
+                            
 
                 print "File name",violations
                 
                 for file, scores in file_scores.iteritems():
-                    score_line = file + "," + str(scores)
-                   # for violation in violations:
-                   #     score_line = score_line + ',' + scores[violation]
+                    score_line = file
+                    for violation in violations:
+                      score_line = score_line + ',' + str(scores.get(violation, 0.0))
                         
                     print score_line
                     #    print file, ",", scores
