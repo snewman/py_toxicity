@@ -80,33 +80,33 @@ def main(argv):
                     errors = file.getElementsByTagName('error')
                                
                     if len(errors) > 0:
-                        #Need to convert to maps to pull into a table...
-                        file = file.getAttribute("name")
-
+                        #Strip off preceding source path
+                        filename = file.getAttribute("name").split(src_dir)[1]
+                        
                         for error in errors:
                             message = error.getAttribute('message')
                             score = score_of_violation(message)
                             violation = name_of_violation(message)
                             violations.add(violation)
 
-                            if not file_scores.has_key(file):
-                                file_scores[file] = {}
+                            if not file_scores.has_key(filename):
+                                file_scores[filename] = {}
 
-                            if file_scores[file].has_key(violation):
-                                file_scores[file][violation] = file_scores[file][violation] + score
+                            if file_scores[filename].has_key(violation):
+                                file_scores[filename][violation] = file_scores[filename][violation] + score
                             else:
-                                file_scores[file][violation] = score
-                            
+                                file_scores[filename][violation] = score
 
-                print "File name",violations
-                
-                for file, scores in file_scores.iteritems():
-                    score_line = file
-                    for violation in violations:
-                      score_line = score_line + ',' + str(scores.get(violation, 0.0))
+                with open("scores.csv", "w") as scores_file:
+                    scores_file.write("File name," + reduce(lambda x, y: x + str("," + y), violations) + "\n")
+                    for file, scores in file_scores.iteritems():
+                        score_line = file
+                        for violation in violations:
+                            score_line = score_line + ',' + str(scores.get(violation, 0.0))
                         
-                    print score_line
-                    #    print file, ",", scores
+                        scores_file.write(score_line + "\n")
+                            #    print file, ",", scores
+
                
 if __name__ == "__main__":
     main(sys.argv[1:])
